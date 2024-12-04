@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { Transition } from './transition';
 import { Definition } from './definition';
-import { WorkflowLogicError } from '../errors/workflow-logic.error';
+import { WorkflowSetupError } from '../errors/workflow-setup.error';
 
 describe('Definition', () => {
   const twoTransitions = [
@@ -31,7 +31,7 @@ describe('Definition', () => {
   it('should throw an error if initial place does not exist', () => {
     expect(() => {
       new Definition(['a', 'b', 'c'], twoTransitions, 'd');
-    }).toThrow(WorkflowLogicError);
+    }).toThrow(WorkflowSetupError);
   });
 
   it('should add places from transitions if not provided initially', () => {
@@ -52,6 +52,6 @@ describe('Definition', () => {
   it('should throw an error if any initial place does not exist', () => {
     expect(() => {
       new Definition(['a', 'b', 'c'], twoTransitions, ['a', 'd']);
-    }).toThrow(WorkflowLogicError);
+    }).toThrow(WorkflowSetupError);
   });
 });

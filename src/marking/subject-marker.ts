@@ -1,5 +1,5 @@
-import { WorkflowSubject } from '../interfaces/subject';
 import { MarkingState } from './marking-state';
+import { WorkflowSubject } from './subject';
 
 export interface SubjectMarker<
   SUBJECT extends WorkflowSubject = WorkflowSubject,

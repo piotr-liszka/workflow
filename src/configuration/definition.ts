@@ -1,5 +1,5 @@
-import { WorkflowLogicError } from '../errors/workflow-logic.error';
 import { Transition } from './transition';
+import { WorkflowSetupError } from '../errors/workflow-setup.error';
 
 export class Definition {
   private places = new Set<string>();
@@ -39,7 +39,7 @@ export class Definition {
 
     placeArray.forEach((place) => {
       if (!this.places.has(place)) {
-        throw new WorkflowLogicError(
+        throw new WorkflowSetupError(
           `Place "${place}" cannot be the initial place as it does not exist in all places.`,
         );
       }

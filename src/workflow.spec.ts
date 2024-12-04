@@ -5,6 +5,7 @@ import { SubjectPropertyMarker } from './marking/subject-property-marker';
 import { Transition } from './configuration/transition';
 import { WorkflowTransitionNotExistError } from './errors/workflow-transition-not-exist.error';
 import { WorkflowTransitionNotEnabledError } from './errors/workflow-transition-not-enabled.error';
+import { Guard } from './configuration/guard';
 
 const createThreeStepWorkflowDefinition = (): Definition => {
   return new Definition(
@@ -44,6 +45,69 @@ const createComplexWorkflowDefinition = (): Definition => {
   return new Definition(places, transitions);
 };
 
+const createLongWorkflowDefinition = (): Definition => {
+  const places = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+  const transitions = [
+    new Transition('t1', 'a', 'b'),
+    new Transition('t2', 'b', 'c'),
+    new Transition('t3', 'c', 'd'),
+    new Transition('t4', 'c', 'e'),
+    new Transition('t5', 'e', 'f'),
+    new Transition('t6', 'd', 'f'),
+  ];
+
+  // +---+     +----+     +---+     +----+     +----+     +----+     +----+     +----+     +---+
+  // | a | --> | t1 | --> | b | --> | t2 | --> | c  | --> | t4 | --> | e  | --> | t6 | --> | f |
+  // +---+     +----+     +---+     +----+     +----+     +----+     +----+     +----+     +---+
+  //                                             |                                           ^
+  //                                             |                                           |
+  //                                             v                                           |
+  //                                           +----+     +----+     +----+                  |
+  //                                           | t3 | --> | d  | --> | t5 | -----------------+
+  //                                           +----+     +----+     +----+
+
+  return new Definition(places, transitions);
+};
+
+const createComplexWorkflowDefinitionWithGuards = (): Definition => {
+  const places = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+
+  const transitions = [
+    new Transition('t1', 'a', 'b'),
+    new Transition('t2', 'b', 'c'),
+    new Transition('t3', 'c', 'd'),
+    new Transition('t4', 'c', 'e', [Guard.fromQuery('propertyA === true')]),
+    new Transition('t5', 'e', 'f'),
+
+    new Transition('t6', 'd', 'f', [Guard.fromQuery('propertyB === 2')]),
+
+    new Transition('t7', 'd', 'g', [Guard.fromQuery('propertyB === 4')]),
+    new Transition('t8', 'g', 'h'),
+    new Transition('t9', 'h', 'f'),
+  ];
+  //                                                   guard "propertyA === true"
+  //                                                   v
+  //                                                   v
+  // +---+     +----+     +---+     +----+     +----+     +----+     +----+     +----+     +----+
+  // | a | --> | t1 | --> | b | --> | t2 | --> | c  | --> | t4 | --> | e  | --> | t6 | --> | f  |
+  // +---+     +----+     +---+     +----+     +----+     +----+     +----+     +----+     +----+
+  //                                             |                                ^           ^
+  //                                             |                                |           |
+  //                                             v                                |           |
+  //                                           +----+     +----+                  |        +----+
+  //                                           | t3 | --> | d  | -----------------+        | t9 |
+  //                                           +----+     +----+    "propertyB === 2"      +----+
+  //                                                        |                                ^
+  //                                                        |                                |
+  //                                                        | ~ "propertyB === 4"            |
+  //                                                        v                                |
+  //                                                      +----+     +----+     +----+     +----+
+  //                                                      | t7 | --> | g  | --> | t8 | --> | h  |
+  //                                                      +----+     +----+     +----+     +----+
+
+  return new Definition(places, transitions);
+};
 const createWorkflowWithSameNameTransition = (): Definition => {
   const places = ['a', 'b', 'c'];
 
@@ -72,11 +136,98 @@ const createWorkflowWithSameNameTransition = (): Definition => {
 };
 
 describe('Workflow', () => {
+  describe('process', () => {
+    test('should process from the beginning to the end in simple workflow', () => {
+      const subject: { marker?: Record<string, number> } = {};
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createThreeStepWorkflowDefinition(),
+        new SubjectPropertyMarker(),
+      );
+
+      workflow.process(subject);
+      expect(subject).toEqual({
+        marker: {
+          c: 1,
+        },
+      });
+    });
+    test('should process from the specific place to the end in simple workflow', () => {
+      const subject: { marker?: Record<string, number> } = {
+        marker: { b: 1 },
+      };
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createThreeStepWorkflowDefinition(),
+        new SubjectPropertyMarker(),
+      );
+
+      workflow.process(subject);
+      expect(subject).toEqual({
+        marker: {
+          c: 1,
+        },
+      });
+    });
+    test('should process as far as it is possible in complex workflow', () => {
+      const subject: { marker?: Record<string, number> } = {
+        marker: { a: 1 },
+      };
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createLongWorkflowDefinition(),
+        new SubjectPropertyMarker(),
+      );
+
+      const transitions = workflow.process(subject);
+      expect(subject).toEqual({
+        marker: {
+          c: 1,
+        },
+      });
+
+      expect(transitions).toEqual([
+        new Transition('t1', 'a', 'b'),
+        new Transition('t2', 'b', 'c'),
+      ]);
+    });
+    test('should process from the beginning to the end in complex workflow with guards', () => {
+      const subject: {
+        marker?: Record<string, number>;
+        propertyA: boolean;
+        propertyB: number;
+      } = {
+        marker: {
+          a: 1,
+        },
+        propertyA: false,
+        propertyB: 4,
+      };
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createComplexWorkflowDefinitionWithGuards(),
+        new SubjectPropertyMarker(),
+      );
+
+      const transitions = workflow.process(subject);
+      expect(subject).toEqual({
+        marker: {
+          f: 1,
+        },
+        propertyA: false,
+        propertyB: 4,
+      });
+
+      expect(transitions.length).toEqual(6);
+    });
+  });
   describe('can', () => {
     test('should return false for unknown transition', () => {
-      const subject = {
-        state: 'a',
-      };
+      const subject = {};
       const workflow = new Workflow(
         'example_workflow',
         createThreeStepWorkflowDefinition(),
@@ -159,6 +310,26 @@ describe('Workflow', () => {
       const result3 = workflow.can(subject, 'to_a');
       expect(result3).toBeTruthy();
     });
+
+    test('should allow/not allow to apply transition according to guards', () => {
+      const subject: { marker?: Record<string, number>; propertyB?: number } = {
+        marker: {
+          d: 1,
+        },
+      };
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createComplexWorkflowDefinitionWithGuards(),
+        new SubjectPropertyMarker(),
+      );
+
+      expect(workflow.can(subject, 't7')).toBeFalsy();
+      subject.propertyB = 3;
+      expect(workflow.can(subject, 't7')).toBeFalsy();
+      subject.propertyB = 4;
+      expect(workflow.can(subject, 't7')).toBeTruthy();
+    });
   });
 
   describe('apply', () => {
@@ -171,9 +342,9 @@ describe('Workflow', () => {
         new SubjectPropertyMarker(),
       );
 
-      const response = workflow.apply(subject, 't1');
+      workflow.apply(subject, 't1');
 
-      expect(response).toEqual({
+      expect(subject).toEqual({
         marker: { b: 1, c: 1 },
       });
     });
@@ -206,9 +377,9 @@ describe('Workflow', () => {
         new SubjectPropertyMarker(),
       );
 
-      const response = workflow.apply(subject, 't5');
+      workflow.apply(subject, 't5');
 
-      expect(response).toEqual({
+      expect(subject).toEqual({
         marker: { c: 1, g: 1 },
       });
 
@@ -227,17 +398,17 @@ describe('Workflow', () => {
         new SubjectPropertyMarker(),
       );
 
-      const step1 = workflow.apply(subject, 't1');
-      expect(step1).toEqual({ marker: { b: 1, c: 1 } });
+      workflow.apply(subject, 't1');
+      expect(subject).toEqual({ marker: { b: 1, c: 1 } });
 
-      const step2 = workflow.apply(subject, 't2');
-      expect(step2).toEqual({ marker: { d: 1 } });
+      workflow.apply(subject, 't2');
+      expect(subject).toEqual({ marker: { d: 1 } });
 
-      const step3 = workflow.apply(subject, 't3');
-      expect(step3).toEqual({ marker: { e: 1 } });
+      workflow.apply(subject, 't3');
+      expect(subject).toEqual({ marker: { e: 1 } });
 
-      const step4 = workflow.apply(subject, 't5');
-      expect(step4).toEqual({ marker: { g: 1 } });
+      workflow.apply(subject, 't5');
+      expect(subject).toEqual({ marker: { g: 1 } });
     });
 
     test('should apply with the same name transitions', () => {
@@ -249,18 +420,44 @@ describe('Workflow', () => {
         new SubjectPropertyMarker(),
       );
 
-      const step1 = workflow.apply(subject, 'a_to_bc');
-      expect(step1).toEqual({ marker: { b: 1, c: 1 } });
+      workflow.apply(subject, 'a_to_bc');
+      expect(subject).toEqual({ marker: { b: 1, c: 1 } });
 
-      const step2 = workflow.apply(subject, 'to_a');
-      expect(step2).toEqual({ marker: { a: 2 } });
+      workflow.apply(subject, 'to_a');
+      expect(subject).toEqual({ marker: { a: 2 } });
 
       workflow.apply(subject, 'a_to_bc');
-      const step4 = workflow.apply(subject, 'b_to_c');
-      expect(step4).toEqual({ marker: { a: 1, c: 2 } });
+      workflow.apply(subject, 'b_to_c');
+      expect(subject).toEqual({ marker: { a: 1, c: 2 } });
 
-      const step5 = workflow.apply(subject, 'to_a');
-      expect(step5).toEqual({ marker: { a: 2, c: 1 } });
+      workflow.apply(subject, 'to_a');
+      expect(subject).toEqual({ marker: { a: 2, c: 1 } });
+    });
+
+    test('should  apply transition according to guards', () => {
+      const subject: { marker?: Record<string, number>; propertyB?: number } = {
+        marker: {
+          d: 1,
+        },
+      };
+
+      const workflow = new Workflow(
+        'example_workflow',
+        createComplexWorkflowDefinitionWithGuards(),
+        new SubjectPropertyMarker(),
+      );
+
+      expect(() => workflow.apply(subject, 't7')).toThrow(
+        WorkflowTransitionNotEnabledError,
+      );
+
+      subject.propertyB = 4;
+      workflow.apply(subject, 't7');
+
+      expect(subject).toEqual({
+        propertyB: 4,
+        marker: { g: 1 },
+      });
     });
   });
 

@@ -47,6 +47,25 @@ export class Workflow<SUBJECT extends WorkflowSubject = WorkflowSubject> {
     return state;
   }
 
+  process(subject: SUBJECT) {
+    const appliedTransitions: Transition[] = [];
+    while (true) {
+      const enabledTransitions = this.getEnabledTransitions(subject);
+
+      if (enabledTransitions.length !== 1) {
+        break;
+      }
+
+      const transition = enabledTransitions[0];
+
+      this.apply(subject, transition.getName());
+
+      appliedTransitions.push(transition);
+    }
+
+    return appliedTransitions;
+  }
+
   can(subject: SUBJECT, transitionName: string) {
     const transitions = this.definition.getTransitions();
     const state = this.getState(subject);
@@ -56,7 +75,7 @@ export class Workflow<SUBJECT extends WorkflowSubject = WorkflowSubject> {
         continue;
       }
 
-      const transitionResult = this.checkTransition(state, transition);
+      const transitionResult = this.checkTransition(state, transition, subject);
 
       if (transitionResult.isSuccessful()) {
         return true;
@@ -70,7 +89,7 @@ export class Workflow<SUBJECT extends WorkflowSubject = WorkflowSubject> {
     const state = this.getState(subject);
 
     for (const transition of this.definition.getTransitions()) {
-      const transitionResult = this.checkTransition(state, transition);
+      const transitionResult = this.checkTransition(state, transition, subject);
 
       if (transitionResult.isSuccessful()) {
         enabledTransitions.push(transition);
@@ -93,7 +112,7 @@ export class Workflow<SUBJECT extends WorkflowSubject = WorkflowSubject> {
       }
       transitionExist = true;
 
-      const transitionResult = this.checkTransition(state, transition);
+      const transitionResult = this.checkTransition(state, transition, subject);
 
       if (transitionResult.isSuccessful()) {
         transitionSuccessful = true;
@@ -120,12 +139,24 @@ export class Workflow<SUBJECT extends WorkflowSubject = WorkflowSubject> {
     if (!transitionSuccessful) {
       throw new WorkflowTransitionNotEnabledError(transitionName);
     }
-
-    return subject;
   }
 
-  private checkTransition(state: MarkingState, transition: Transition) {
+  private checkTransition(
+    state: MarkingState,
+    transition: Transition,
+    subject: SUBJECT,
+  ) {
     for (const place of transition.getFroms()) {
+      if (!state.places.has(place)) {
+        return new TransitionResult(false, 'Transition blocked by marking');
+      }
+
+      const guards = transition.getGuards();
+      for (let guard of guards) {
+        if (!guard.check(subject)) {
+          return new TransitionResult(false, 'Transition blocked by guard');
+        }
+      }
       if (!state.places.has(place)) {
         return new TransitionResult(false, 'Transition blocked by marking');
       }
