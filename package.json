@@ -1,13 +1,20 @@
 {
   "name": "workflow",
   "version": "1.0.0",
-  "description": "",
+  "description": "A TypeScript-based implementation of a Petri net workflow, with guards.",
+  "keywords": [
+    "workflow",
+    "petri net",
+    "typescript",
+    "business rules",
+    "business guards",
+    "state machine"
+  ],
+  "author": "Piotr Liszka https://github.com/piotr-liszka",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "tsc -p tsconfig.json"
   },
-  "keywords": [],
-  "author": "",
   "license": "MIT",
   "devDependencies": {
     "@jest/globals": "^29.7.0",
