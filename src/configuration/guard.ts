@@ -2,7 +2,10 @@ import { WorkflowSubject } from '../marking/subject';
 import { WorkflowSetupError } from '../errors/workflow-setup.error';
 
 export class Guard<Subject = WorkflowSubject> {
-  constructor(public name: string, public check: (subject: Subject) => boolean) {}
+  constructor(
+    public name: string,
+    public check: (subject: Subject) => boolean,
+  ) {}
 
   /**
    * Create a guard from a query string, see tests for examples.

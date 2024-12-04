@@ -13,6 +13,7 @@
   "author": "Piotr Liszka https://github.com/piotr-liszka",
   "scripts": {
     "test": "jest",
+    "prettier": "prettier -c ./",
     "build": "tsc -p tsconfig.json"
   },
   "license": "MIT",

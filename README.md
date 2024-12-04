@@ -1,5 +1,7 @@
 # Workflow
 
+[![Workflow](https://github.com/piotr-liszka/workflow/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/piotr-liszka/workflow/actions/workflows/static-analysis.yml)
+
 This project is a TypeScript-based implementation of a Petri net workflow. The workflow system allows for defining states and transitions, and managing the state of subjects through these transitions.
 
 ## Installation
@@ -38,9 +40,9 @@ Guards are conditions that must be met for a transition to be enabled. They are 
 Here is an example of how to use the `Workflow` class in your project:
 
 ```typescript
-import {Workflow} from './workflow';
-import {Definition} from './configuration/definition';
-import {WorkflowSubject} from './marking/subject';
+import { Workflow } from './workflow';
+import { Definition } from './configuration/definition';
+import { WorkflowSubject } from './marking/subject';
 
 // Define your workflow definition
 const definition = new Definition(
@@ -49,7 +51,7 @@ const definition = new Definition(
     new Transition('to queue', 'triage', 'todo'),
     new Transition('to in progress', 'todo', 'in_progress'),
     new Transition('to done', 'in_progress', 'done', new Guard('isDone', (subject) => subject.isDone)),
-  ]
+  ],
 );
 
 // Create a subject
