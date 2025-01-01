@@ -9,7 +9,11 @@ This project is a TypeScript-based implementation of a Petri net workflow. The w
 To install the dependencies, use the following commands:
 
 ```sh
-npm install
+npm install @b_niamin/workflow
+
+pnpm add @b_niamin/workflow
+
+yarn add @b_niamin/workflow
 ```
 
 ## Usage
@@ -40,9 +44,7 @@ Guards are conditions that must be met for a transition to be enabled. They are 
 Here is an example of how to use the `Workflow` class in your project:
 
 ```typescript
-import { Workflow } from './workflow';
-import { Definition } from './configuration/definition';
-import { WorkflowSubject } from './marking/subject';
+import {Definition, Guard, Transition, Workflow} from "@b_niamin/workflow";
 
 // Define your workflow definition
 const definition = new Definition(
@@ -54,8 +56,9 @@ const definition = new Definition(
   ],
 );
 
+
 // Create a subject
-const subject: WorkflowSubject = {
+const subject = {
   isDone: false,
 };
 
@@ -72,7 +75,7 @@ console.log('Can transition:', canTransition);
 
 // Apply a transition
 if (canTransition) {
-  workflow.apply(subject, 'transitionName');
+  workflow.apply(subject, 'to queue');
   console.log('Transition applied');
 }
 

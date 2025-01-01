@@ -1,7 +1,10 @@
 {
-  "name": "workflow",
+  "name": "@b_niamin/workflow",
   "version": "1.0.0",
   "description": "A TypeScript-based implementation of a Petri net workflow, with guards.",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm5/index.js",
+  "es2015": "./dist/esm/index.js",
   "keywords": [
     "workflow",
     "petri net",
@@ -13,8 +16,11 @@
   "author": "Piotr Liszka https://github.com/piotr-liszka",
   "scripts": {
     "test": "jest",
+    "test-with-coverage": "jest --coverage",
     "prettier": "prettier -c ./",
-    "build": "tsc -p tsconfig.json"
+    "build-cjs": "tsc -p tsconfig.cjs.json",
+    "build-esm": "tsc -p tsconfig.esm.json",
+    "build-esm-5": "tsc -p tsconfig.esm5.json"
   },
   "license": "MIT",
   "devDependencies": {
@@ -25,5 +31,14 @@
     "prettier": "^3.3.3",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piotr-liszka/workflow.git"
+  },
+  "types": "./dist/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/piotr-liszka/workflow/issues"
+  },
+  "homepage": "https://github.com/piotr-liszka/workflow#readme"
 }
