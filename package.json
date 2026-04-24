@@ -1,10 +1,24 @@
 {
   "name": "@b_niamin/workflow",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "A TypeScript-based implementation of a Petri net workflow, with guards.",
+  "packageManager": "pnpm@10.17.0",
   "main": "./dist/cjs/index.js",
-  "module": "./dist/esm5/index.js",
-  "es2015": "./dist/esm/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/cjs/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist"
   ],
@@ -21,27 +35,27 @@
     "test": "jest",
     "test-with-coverage": "jest --coverage",
     "prettier": "prettier -c ./",
-    "build": "pnpm run build-cjs",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "pnpm run clean && pnpm run build-cjs && pnpm run build-esm && pnpm run build-post",
     "build-cjs": "tsc -p tsconfig.cjs.json",
     "build-esm": "tsc -p tsconfig.esm.json",
-    "build-esm-5": "tsc -p tsconfig.esm5.json",
+    "build-post": "node scripts/fix-esm-extensions.mjs && echo '{\"type\":\"commonjs\"}' > dist/cjs/package.json && echo '{\"type\":\"module\"}' > dist/esm/package.json",
     "publish:ci": "npm publish --provenance --access public"
   },
   "license": "MIT",
   "devDependencies": {
-    "@jest/globals": "^29.7.0",
-    "eslint": "^9.39.4",
-    "eslint-config-prettier": "^9.1.2",
-    "jest": "^29.7.0",
+    "@jest/globals": "^30.3.0",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "jest": "^30.3.0",
     "prettier": "^3.8.3",
     "ts-jest": "^29.4.9",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/piotr-liszka/workflow.git"
   },
-  "types": "./dist/index.d.ts",
   "bugs": {
     "url": "https://github.com/piotr-liszka/workflow/issues"
   },
