@@ -5,8 +5,7 @@ import { WorkflowSubject } from './subject';
 
 export class SubjectPropertyMarker<
   SUBJECT extends WorkflowSubject = WorkflowSubject,
-> implements SubjectMarker<SUBJECT>
-{
+> implements SubjectMarker<SUBJECT> {
   constructor(private property = 'marker') {}
 
   writeState(subject: SUBJECT, state: MarkingState): void {
