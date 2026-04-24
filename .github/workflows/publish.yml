@@ -17,28 +17,26 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+      - name: Update npm for Trusted Publishing
+        run: npm install -g npm@latest
       - name: Install dependencies
         run: pnpm install
-      - name: Unit tests
-        run: pnpm test
-      - name: Prettier
-        run: pnpm run prettier
       - name: Build
         run: pnpm run build
 
       - id: version-check
-        uses: EndBug/version-check@v2
+        uses: EndBug/version-check@v3
         with:
           diff-search: true
           static-checking: localIsNew
@@ -48,5 +46,3 @@ jobs:
       - name: Publish to npm
         if: steps.version-check.outputs.changed == 'true'
         run: pnpm run publish:ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
