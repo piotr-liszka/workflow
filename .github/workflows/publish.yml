@@ -1,0 +1,52 @@
+name: 🚀 Publish
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ['main']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    permissions:
+      id-token: write
+      contents: read
+    name: Install dependencies, test, build and publish
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Unit tests
+        run: pnpm test
+      - name: Prettier
+        run: pnpm run prettier
+      - name: Build
+        run: pnpm run build
+
+      - id: version-check
+        uses: EndBug/version-check@v2
+        with:
+          diff-search: true
+          static-checking: localIsNew
+          file-url: https://unpkg.com/@b_niamin/workflow/package.json
+          file-name: ./package.json
+
+      - name: Publish to npm
+        if: steps.version-check.outputs.changed == 'true'
+        run: pnpm run publish:ci
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
