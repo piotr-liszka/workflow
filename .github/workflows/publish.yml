@@ -38,7 +38,7 @@ jobs:
         run: pnpm run build
 
       - id: version-check
-        uses: EndBug/version-check@v2
+        uses: EndBug/version-check@v3
         with:
           diff-search: true
           static-checking: localIsNew
